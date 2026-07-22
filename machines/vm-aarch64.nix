@@ -15,6 +15,12 @@
   # В этой VM сетевой интерфейс называется enp2s0.
   networking.interfaces.enp2s0.useDHCP = true;
 
+  # VMware DNS-прокси 172.16.45.2 в нашей NAT-сети не отвечает.
+  networking.nameservers = [
+    "1.1.1.1"
+    "8.8.8.8"
+  ];
+
   # Интеграция NixOS с VMware Fusion.
   virtualisation.vmware.guest.enable = true;
 
