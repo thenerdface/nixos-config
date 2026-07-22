@@ -12,8 +12,8 @@
 
   networking.hostName = "vm-aarch64";
 
-  # В VMware Fusion сетевой интерфейс обычно называется ens160.
-  networking.interfaces.ens160.useDHCP = true;
+  # В этой VM сетевой интерфейс называется enp2s0.
+  networking.interfaces.enp2s0.useDHCP = true;
 
   # Интеграция NixOS с VMware Fusion.
   virtualisation.vmware.guest.enable = true;
