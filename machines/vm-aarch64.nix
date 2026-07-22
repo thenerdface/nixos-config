@@ -42,6 +42,9 @@
   # Нужен для управления VM с терминала macOS.
   services.openssh.enable = true;
 
+  # Fish зарегистрирован как системная оболочка.
+  programs.fish.enable = true;
+
   # Разрешаем команды nix и работу с flakes.
   nix.settings.experimental-features = [
     "nix-command"

@@ -8,9 +8,15 @@
       url = "github:nix-community/home-manager/release-26.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # Та же версия bobthefish, которую закрепил Хашимото.
+    theme-bobthefish = {
+      url = "github:oh-my-fish/theme-bobthefish/e3b4d4eafc23516e35f162686f08a42edf844e40";
+      flake = false;
+    };
   };
 
-  outputs = { nixpkgs, home-manager, ... }: {
+  outputs = inputs@{ nixpkgs, home-manager, ... }: {
     nixosConfigurations.vm-aarch64 = nixpkgs.lib.nixosSystem {
       system = "aarch64-linux";
 
@@ -22,9 +28,8 @@
         {
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
-
-          # Сохраняет старый автоматически созданный конфиг i3.
           home-manager.backupFileExtension = "hm-backup";
+          home-manager.extraSpecialArgs = { inherit inputs; };
 
           home-manager.users.muhammad =
             import ./users/muhammad/home.nix;

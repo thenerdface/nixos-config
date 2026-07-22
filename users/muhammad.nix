@@ -8,7 +8,7 @@
     isNormalUser = true;
     home = "/home/muhammad";
     extraGroups = [ "wheel" ];
-    shell = pkgs.bashInteractive;
+    shell = pkgs.fish;
 
     hashedPassword = "$6$42pkKA9Gi7LONNJr$jPxO/fnkKv4nQPJVqtIhe5IFRAnKkBUG7qwFY1O.kweF4FinfRRWZqHyJE0tzFMRLo9ro9Wq58GujeZ4BMILM1";
 
