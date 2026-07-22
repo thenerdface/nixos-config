@@ -3,6 +3,9 @@ NIXPORT ?= 22
 NIXNAME ?= vm-aarch64
 NIXUSER ?= muhammad
 
+MAKEFILE_DIR := $(patsubst %/,%,$(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
+SECRETS_ARCHIVE ?= $(MAKEFILE_DIR)/backup.tar.gz
+
 SSH_OPTIONS := \
 	-i ~/.ssh/id_ed25519_nixos_vm \
 	-o UserKnownHostsFile=/dev/null \
@@ -36,18 +39,20 @@ vm/bootstrap0:
 		nixos-install --no-root-passwd && reboot; \
 	"
 
-.PHONY: vm/bootstrap vm/copy vm/switch
+.PHONY: vm/bootstrap vm/copy vm/switch vm/secrets
 
 # Полная начальная загрузка после bootstrap0.
 vm/bootstrap:
 	NIXUSER=root $(MAKE) vm/copy
 	NIXUSER=root $(MAKE) vm/switch
+	$(MAKE) vm/secrets
 	ssh $(SSH_OPTIONS) -p$(NIXPORT) $(NIXUSER)@$(NIXADDR) "sudo reboot"
 
 # Копирование конфигурации с Mac в VM.
 vm/copy:
 	rsync -av -e 'ssh $(SSH_OPTIONS) -p$(NIXPORT)' \
 		--exclude='.git/' \
+		--exclude='backup.tar.gz' \
 		--rsync-path="sudo rsync" \
 		./ $(NIXUSER)@$(NIXADDR):/nix-config
 
@@ -56,3 +61,43 @@ vm/switch:
 	ssh $(SSH_OPTIONS) -p$(NIXPORT) $(NIXUSER)@$(NIXADDR) " \
 		sudo nixos-rebuild switch --flake \"/nix-config#$(NIXNAME)\" \
 	"
+
+# Копирование SSH/GPG-секретов с Mac в готовую VM.
+vm/secrets:
+	rsync -av -e 'ssh $(SSH_OPTIONS) -p$(NIXPORT)' \
+		--exclude='environment' \
+		$(HOME)/.ssh/ $(NIXUSER)@$(NIXADDR):~/.ssh
+	@if [ -d "$(HOME)/.gnupg" ]; then \
+		rsync -av -e 'ssh $(SSH_OPTIONS) -p$(NIXPORT)' \
+			--exclude='.#*' \
+			--exclude='S.*' \
+			--exclude='*.conf' \
+			$(HOME)/.gnupg/ $(NIXUSER)@$(NIXADDR):~/.gnupg; \
+	fi
+
+.PHONY: secrets/backup secrets/restore
+
+# Локальная резервная копия SSH-ключей и GPG keyring.
+secrets/backup:
+	mkdir -p $(HOME)/.ssh $(HOME)/.gnupg
+	tar -czvf $(SECRETS_ARCHIVE) \
+		-C $(HOME) \
+		--exclude='.ssh/environment' \
+		--exclude='.gnupg/.#*' \
+		--exclude='.gnupg/S.*' \
+		--exclude='.gnupg/*.conf' \
+		.ssh/ \
+		.gnupg
+
+# Восстановление секретов на исходной машине перед vm/bootstrap.
+secrets/restore:
+	@if [ ! -f "$(SECRETS_ARCHIVE)" ]; then \
+		echo "Error: $(SECRETS_ARCHIVE) not found"; \
+		exit 1; \
+	fi
+	mkdir -p $(HOME)/.ssh $(HOME)/.gnupg
+	tar -xzvf $(SECRETS_ARCHIVE) -C $(HOME)
+	find $(HOME)/.ssh -type d -exec chmod 700 {} \;
+	find $(HOME)/.ssh -type f -exec chmod 600 {} \;
+	find $(HOME)/.gnupg -type d -exec chmod 700 {} \;
+	find $(HOME)/.gnupg -type f -exec chmod 600 {} \;
