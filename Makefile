@@ -4,6 +4,7 @@ NIXNAME ?= vm-aarch64
 NIXUSER ?= muhammad
 
 SSH_OPTIONS := \
+	-i ~/.ssh/id_ed25519_nixos_vm \
 	-o UserKnownHostsFile=/dev/null \
 	-o StrictHostKeyChecking=no
 
@@ -33,4 +34,25 @@ vm/bootstrap0:
 			users.users.root.initialPassword = \"root\";\n \
 		' /mnt/etc/nixos/configuration.nix; \
 		nixos-install --no-root-passwd && reboot; \
+	"
+
+.PHONY: vm/bootstrap vm/copy vm/switch
+
+# Полная начальная загрузка после bootstrap0.
+vm/bootstrap:
+	NIXUSER=root $(MAKE) vm/copy
+	NIXUSER=root $(MAKE) vm/switch
+	ssh $(SSH_OPTIONS) -p$(NIXPORT) $(NIXUSER)@$(NIXADDR) "sudo reboot"
+
+# Копирование конфигурации с Mac в VM.
+vm/copy:
+	rsync -av -e 'ssh $(SSH_OPTIONS) -p$(NIXPORT)' \
+		--exclude='.git/' \
+		--rsync-path="sudo rsync" \
+		./ $(NIXUSER)@$(NIXADDR):/nix-config
+
+# Применение скопированной flake-конфигурации.
+vm/switch:
+	ssh $(SSH_OPTIONS) -p$(NIXPORT) $(NIXUSER)@$(NIXADDR) " \
+		sudo nixos-rebuild switch --flake \"/nix-config#$(NIXNAME)\" \
 	"
