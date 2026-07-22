@@ -24,6 +24,21 @@
   # Интеграция NixOS с VMware Fusion.
   virtualisation.vmware.guest.enable = true;
 
+  # X11/i3 — адаптация специализации i3 из конфигурации Хашимото.
+  services.xserver = {
+    enable = true;
+    xkb.layout = "us";
+    dpi = 220;
+
+    # У Хашимото xterm также отключён.
+    desktopManager.xterm.enable = false;
+
+    displayManager.lightdm.enable = true;
+    windowManager.i3.enable = true;
+  };
+
+  services.displayManager.defaultSession = "none+i3";
+
   # Нужен для управления VM с терминала macOS.
   services.openssh.enable = true;
 
@@ -43,6 +58,12 @@
     fd
     unzip
     curl
+
+    kitty
+    i3status
+    rofi
+    xclip
+    gtkmm3
   ];
 
   system.stateVersion = "26.05";
