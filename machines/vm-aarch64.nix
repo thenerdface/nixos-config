@@ -59,6 +59,7 @@
     gnumake
     ripgrep
     fd
+    tree-sitter
     unzip
     curl
 
