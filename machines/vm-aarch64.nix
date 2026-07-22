@@ -3,6 +3,7 @@
 {
   imports = [
     ./hardware/vm-aarch64.nix
+    ../users/muhammad.nix
   ];
 
   # VMware запускает VM через UEFI.
