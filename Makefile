@@ -54,12 +54,12 @@ vm/bootstrap0:
 .PHONY: vm/bootstrap vm/dns vm/copy vm/switch vm/secrets vm/repo
 
 # Полная начальная загрузка после bootstrap0.
+# Рабочий репозиторий затем клонируется вручную уже внутри VM, как у Хашимото.
 vm/bootstrap:
 	NIXUSER=root $(MAKE) vm/dns
 	NIXUSER=root $(MAKE) vm/copy
 	NIXUSER=root $(MAKE) vm/switch
 	$(MAKE) vm/secrets
-	$(MAKE) vm/repo
 	ssh $(SSH_OPTIONS) -p$(NIXPORT) $(NIXUSER)@$(NIXADDR) "sudo reboot"
 
 # Принудительный DNS перед второй стадией. Нужен из-за сломанного DNS-прокси VMware NAT.
@@ -107,9 +107,7 @@ vm/secrets:
 		'rm -f /tmp/nixos-secrets.tar.gz' \
 	| ssh $(SSH_OPTIONS) -p$(NIXPORT) $(NIXUSER)@$(NIXADDR) /bin/sh -s
 
-# Клонирование рабочего репозитория внутрь новой VM.
-# Это наша автоматизация шага, который Хашимото после bootstrap делает внутри VM.
-# Скрипт явно передаётся в /bin/sh, чтобы синтаксис не разбирался Fish.
+# Не входит в vm/bootstrap. Оставлен как необязательная команда для автоматического клонирования.
 vm/repo:
 	printf '%s\n' \
 		'set -eu' \
