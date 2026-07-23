@@ -1,4 +1,4 @@
-{ pkgs, lib, inputs, ... }:
+{ pkgs, lib, inputs, config, ... }:
 
 {
   home.username = "muhammad";
@@ -169,5 +169,5 @@
       };
     };
   };
-  xdg.configFile."nvim".source = ./nvim;
+  xdg.configFile."nvim".source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/nixos-config/users/muhammad/nvim";
 }
