@@ -106,7 +106,7 @@
 
     font = {
       name = "Fira Code";
-      size = 8.0;
+      size = 12.0;
     };
 
     settings = {
