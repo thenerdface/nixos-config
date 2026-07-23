@@ -20,6 +20,10 @@ SSH_OPTIONS := \
 
 vm/bootstrap0:
 	ssh $(SSH_OPTIONS) -p$(NIXPORT) root@$(NIXADDR) " \
+		set -eu; \
+		rm -f /etc/resolv.conf; \
+		printf 'nameserver 1.1.1.1\nnameserver 8.8.8.8\n' > /etc/resolv.conf; \
+		getent hosts cache.nixos.org >/dev/null; \
 		parted /dev/$(NIXBLOCKDEVICE) -- mklabel gpt; \
 		parted /dev/$(NIXBLOCKDEVICE) -- mkpart primary 512MB -8GB; \
 		parted /dev/$(NIXBLOCKDEVICE) -- mkpart primary linux-swap -8GB 100%; \
@@ -42,8 +46,6 @@ vm/bootstrap0:
 			services.openssh.settings.PermitRootLogin = \"yes\";\n \
 			users.users.root.initialPassword = \"root\";\n \
 		' /mnt/etc/nixos/configuration.nix; \
-		rm -f /etc/resolv.conf; \
-		printf "nameserver 1.1.1.1\\nnameserver 8.8.8.8\\n" > /etc/resolv.conf; \
 		nixos-install --no-root-passwd && reboot; \
 	"
 
