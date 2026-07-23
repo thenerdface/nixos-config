@@ -15,11 +15,15 @@
   # В этой VM сетевой интерфейс называется enp2s0.
   networking.interfaces.enp2s0.useDHCP = true;
 
-  # VMware DNS-прокси 172.16.45.2 в нашей NAT-сети не отвечает.
-  networking.nameservers = [
-    "1.1.1.1"
-    "8.8.8.8"
-  ];
+  # DHCP нужен для адреса и маршрута, но не должен переписывать DNS.
+  networking.dhcpcd.extraConfig = ''
+    nohook resolv.conf
+  '';
+  networking.resolvconf.enable = false;
+  environment.etc."resolv.conf".text = ''
+    nameserver 1.1.1.1
+    nameserver 8.8.8.8
+  '';
 
   # Интеграция NixOS с VMware Fusion.
   virtualisation.vmware.guest.enable = true;
