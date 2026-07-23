@@ -2,6 +2,7 @@ NIXADDR ?=
 NIXPORT ?= 22
 NIXNAME ?= vm-aarch64
 NIXUSER ?= muhammad
+NIXBLOCKDEVICE ?= sda
 
 REPO_HTTPS_URL ?= https://github.com/thenerdface/nixos-config.git
 REPO_SSH_URL ?= git@github.com:thenerdface/nixos-config.git
@@ -19,15 +20,15 @@ SSH_OPTIONS := \
 
 vm/bootstrap0:
 	ssh $(SSH_OPTIONS) -p$(NIXPORT) root@$(NIXADDR) " \
-		parted /dev/sda -- mklabel gpt; \
-		parted /dev/sda -- mkpart primary 512MB -8GB; \
-		parted /dev/sda -- mkpart primary linux-swap -8GB 100%; \
-		parted /dev/sda -- mkpart ESP fat32 1MB 512MB; \
-		parted /dev/sda -- set 3 esp on; \
+		parted /dev/$(NIXBLOCKDEVICE) -- mklabel gpt; \
+		parted /dev/$(NIXBLOCKDEVICE) -- mkpart primary 512MB -8GB; \
+		parted /dev/$(NIXBLOCKDEVICE) -- mkpart primary linux-swap -8GB 100%; \
+		parted /dev/$(NIXBLOCKDEVICE) -- mkpart ESP fat32 1MB 512MB; \
+		parted /dev/$(NIXBLOCKDEVICE) -- set 3 esp on; \
 		sleep 1; \
-		mkfs.ext4 -L nixos /dev/sda1; \
-		mkswap -L swap /dev/sda2; \
-		mkfs.fat -F 32 -n boot /dev/sda3; \
+		mkfs.ext4 -L nixos /dev/$(NIXBLOCKDEVICE)1; \
+		mkswap -L swap /dev/$(NIXBLOCKDEVICE)2; \
+		mkfs.fat -F 32 -n boot /dev/$(NIXBLOCKDEVICE)3; \
 		sleep 1; \
 		mount /dev/disk/by-label/nixos /mnt; \
 		mkdir -p /mnt/boot; \
