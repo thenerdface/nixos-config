@@ -36,6 +36,7 @@ vm/bootstrap0:
 		nixos-generate-config --root /mnt; \
 		sed --in-place '/system\.stateVersion = .*/a \
 			nix.settings.experimental-features = [ \"nix-command\" \"flakes\" ];\n \
+			networking.nameservers = [ \"1.1.1.1\" \"8.8.8.8\" ];\n \
 			services.openssh.enable = true;\n \
 			services.openssh.settings.PasswordAuthentication = true;\n \
 			services.openssh.settings.PermitRootLogin = \"yes\";\n \
