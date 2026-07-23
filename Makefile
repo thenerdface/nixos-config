@@ -40,7 +40,9 @@ vm/bootstrap0:
 		nixos-generate-config --root /mnt; \
 		sed --in-place '/system\.stateVersion = .*/a \
 			nix.settings.experimental-features = [ \"nix-command\" \"flakes\" ];\n \
-			networking.nameservers = [ \"1.1.1.1\" \"8.8.8.8\" ];\n \
+			networking.dhcpcd.extraConfig = \"nohook resolv.conf\";\n \
+			networking.resolvconf.enable = false;\n \
+			environment.etc.\"resolv.conf\".text = \"nameserver 1.1.1.1\\nnameserver 8.8.8.8\\n\";\n \
 			services.openssh.enable = true;\n \
 			services.openssh.settings.PasswordAuthentication = true;\n \
 			services.openssh.settings.PermitRootLogin = \"yes\";\n \
@@ -49,15 +51,25 @@ vm/bootstrap0:
 		nixos-install --no-root-passwd && reboot; \
 	"
 
-.PHONY: vm/bootstrap vm/copy vm/switch vm/secrets vm/repo
+.PHONY: vm/bootstrap vm/dns vm/copy vm/switch vm/secrets vm/repo
 
 # Полная начальная загрузка после bootstrap0.
 vm/bootstrap:
+	NIXUSER=root $(MAKE) vm/dns
 	NIXUSER=root $(MAKE) vm/copy
 	NIXUSER=root $(MAKE) vm/switch
 	$(MAKE) vm/secrets
 	$(MAKE) vm/repo
 	ssh $(SSH_OPTIONS) -p$(NIXPORT) $(NIXUSER)@$(NIXADDR) "sudo reboot"
+
+# Принудительный DNS перед второй стадией. Нужен из-за сломанного DNS-прокси VMware NAT.
+vm/dns:
+	ssh $(SSH_OPTIONS) -p$(NIXPORT) $(NIXUSER)@$(NIXADDR) " \
+		rm -f /etc/resolv.conf; \
+		printf 'nameserver 1.1.1.1\nnameserver 8.8.8.8\n' > /etc/resolv.conf; \
+		getent hosts cache.nixos.org >/dev/null; \
+		getent hosts github.com >/dev/null; \
+	"
 
 # Копирование конфигурации с Mac в VM для первоначальной сборки.
 vm/copy:
