@@ -72,6 +72,7 @@ vm/switch:
 	"
 
 # Восстановление SSH/GPG-секретов из внешнего архива на Mac.
+# Скрипт явно передаётся в /bin/sh, потому что login shell пользователя — Fish.
 vm/secrets:
 	@if [ ! -f "$(VM_SECRETS_ARCHIVE)" ]; then \
 		echo "Error: $(VM_SECRETS_ARCHIVE) not found"; \
@@ -80,30 +81,31 @@ vm/secrets:
 	rsync -av -e 'ssh $(SSH_OPTIONS) -p$(NIXPORT)' \
 		$(VM_SECRETS_ARCHIVE) \
 		$(NIXUSER)@$(NIXADDR):/tmp/nixos-secrets.tar.gz
-	ssh $(SSH_OPTIONS) -p$(NIXPORT) $(NIXUSER)@$(NIXADDR) " \
-		set -eu; \
-		umask 077; \
-		mkdir -p ~/.ssh ~/.gnupg; \
-		tar -xzf /tmp/nixos-secrets.tar.gz -C ~; \
-		find ~/.ssh -type d -exec chmod 700 {} \;; \
-		find ~/.ssh -type f -exec chmod 600 {} \;; \
-		find ~/.gnupg -type d -exec chmod 700 {} \;; \
-		find ~/.gnupg -type f -exec chmod 600 {} \;; \
-		rm -f /tmp/nixos-secrets.tar.gz; \
-	"
+	printf '%s\n' \
+		'set -eu' \
+		'umask 077' \
+		'mkdir -p "$$HOME/.ssh" "$$HOME/.gnupg"' \
+		'tar -xzf /tmp/nixos-secrets.tar.gz -C "$$HOME"' \
+		'find "$$HOME/.ssh" -type d -exec chmod 700 {} \;' \
+		'find "$$HOME/.ssh" -type f -exec chmod 600 {} \;' \
+		'find "$$HOME/.gnupg" -type d -exec chmod 700 {} \;' \
+		'find "$$HOME/.gnupg" -type f -exec chmod 600 {} \;' \
+		'rm -f /tmp/nixos-secrets.tar.gz' \
+	| ssh $(SSH_OPTIONS) -p$(NIXPORT) $(NIXUSER)@$(NIXADDR) /bin/sh -s
 
 # Клонирование рабочего репозитория внутрь новой VM.
 # Это наша автоматизация шага, который Хашимото после bootstrap делает внутри VM.
+# Скрипт явно передаётся в /bin/sh, чтобы синтаксис не разбирался Fish.
 vm/repo:
-	ssh $(SSH_OPTIONS) -p$(NIXPORT) $(NIXUSER)@$(NIXADDR) " \
-		set -eu; \
-		if [ -d ~/nixos-config/.git ]; then \
-			git -C ~/nixos-config pull --ff-only; \
-		else \
-			git clone $(REPO_HTTPS_URL) ~/nixos-config; \
-			git -C ~/nixos-config remote set-url origin $(REPO_SSH_URL); \
-		fi; \
-	"
+	printf '%s\n' \
+		'set -eu' \
+		'if [ -d "$$HOME/nixos-config/.git" ]; then' \
+		'  git -C "$$HOME/nixos-config" pull --ff-only' \
+		'else' \
+		'  git clone "$(REPO_HTTPS_URL)" "$$HOME/nixos-config"' \
+		'  git -C "$$HOME/nixos-config" remote set-url origin "$(REPO_SSH_URL)"' \
+		'fi' \
+	| ssh $(SSH_OPTIONS) -p$(NIXPORT) $(NIXUSER)@$(NIXADDR) /bin/sh -s
 
 .PHONY: secrets/backup secrets/restore
 
