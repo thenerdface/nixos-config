@@ -41,6 +41,8 @@ vm/bootstrap0:
 			services.openssh.settings.PermitRootLogin = \"yes\";\n \
 			users.users.root.initialPassword = \"root\";\n \
 		' /mnt/etc/nixos/configuration.nix; \
+		rm -f /etc/resolv.conf; \
+		printf "nameserver 1.1.1.1\\nnameserver 8.8.8.8\\n" > /etc/resolv.conf; \
 		nixos-install --no-root-passwd && reboot; \
 	"
 
