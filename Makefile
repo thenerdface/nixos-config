@@ -3,8 +3,12 @@ NIXPORT ?= 22
 NIXNAME ?= vm-aarch64
 NIXUSER ?= muhammad
 
+REPO_HTTPS_URL ?= https://github.com/thenerdface/nixos-config.git
+REPO_SSH_URL ?= git@github.com:thenerdface/nixos-config.git
+
 MAKEFILE_DIR := $(patsubst %/,%,$(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
 SECRETS_ARCHIVE ?= $(MAKEFILE_DIR)/backup.tar.gz
+VM_SECRETS_ARCHIVE ?= $(HOME)/nixos-secrets/backup.tar.gz
 
 SSH_OPTIONS := \
 	-i ~/.ssh/id_ed25519_nixos_vm \
@@ -39,16 +43,17 @@ vm/bootstrap0:
 		nixos-install --no-root-passwd && reboot; \
 	"
 
-.PHONY: vm/bootstrap vm/copy vm/switch vm/secrets
+.PHONY: vm/bootstrap vm/copy vm/switch vm/secrets vm/repo
 
 # Полная начальная загрузка после bootstrap0.
 vm/bootstrap:
 	NIXUSER=root $(MAKE) vm/copy
 	NIXUSER=root $(MAKE) vm/switch
 	$(MAKE) vm/secrets
+	$(MAKE) vm/repo
 	ssh $(SSH_OPTIONS) -p$(NIXPORT) $(NIXUSER)@$(NIXADDR) "sudo reboot"
 
-# Копирование конфигурации с Mac в VM.
+# Копирование конфигурации с Mac в VM для первоначальной сборки.
 vm/copy:
 	rsync -av -e 'ssh $(SSH_OPTIONS) -p$(NIXPORT)' \
 		--exclude='.git/' \
@@ -62,18 +67,39 @@ vm/switch:
 		sudo nixos-rebuild switch --flake \"/nix-config#$(NIXNAME)\" \
 	"
 
-# Копирование SSH/GPG-секретов с Mac в готовую VM.
+# Восстановление SSH/GPG-секретов из внешнего архива на Mac.
 vm/secrets:
-	rsync -av -e 'ssh $(SSH_OPTIONS) -p$(NIXPORT)' \
-		--exclude='environment' \
-		$(HOME)/.ssh/ $(NIXUSER)@$(NIXADDR):~/.ssh
-	@if [ -d "$(HOME)/.gnupg" ]; then \
-		rsync -av -e 'ssh $(SSH_OPTIONS) -p$(NIXPORT)' \
-			--exclude='.#*' \
-			--exclude='S.*' \
-			--exclude='*.conf' \
-			$(HOME)/.gnupg/ $(NIXUSER)@$(NIXADDR):~/.gnupg; \
+	@if [ ! -f "$(VM_SECRETS_ARCHIVE)" ]; then \
+		echo "Error: $(VM_SECRETS_ARCHIVE) not found"; \
+		exit 1; \
 	fi
+	rsync -av -e 'ssh $(SSH_OPTIONS) -p$(NIXPORT)' \
+		$(VM_SECRETS_ARCHIVE) \
+		$(NIXUSER)@$(NIXADDR):/tmp/nixos-secrets.tar.gz
+	ssh $(SSH_OPTIONS) -p$(NIXPORT) $(NIXUSER)@$(NIXADDR) " \
+		set -eu; \
+		umask 077; \
+		mkdir -p ~/.ssh ~/.gnupg; \
+		tar -xzf /tmp/nixos-secrets.tar.gz -C ~; \
+		find ~/.ssh -type d -exec chmod 700 {} \;; \
+		find ~/.ssh -type f -exec chmod 600 {} \;; \
+		find ~/.gnupg -type d -exec chmod 700 {} \;; \
+		find ~/.gnupg -type f -exec chmod 600 {} \;; \
+		rm -f /tmp/nixos-secrets.tar.gz; \
+	"
+
+# Клонирование рабочего репозитория внутрь новой VM.
+# Это наша автоматизация шага, который Хашимото после bootstrap делает внутри VM.
+vm/repo:
+	ssh $(SSH_OPTIONS) -p$(NIXPORT) $(NIXUSER)@$(NIXADDR) " \
+		set -eu; \
+		if [ -d ~/nixos-config/.git ]; then \
+			git -C ~/nixos-config pull --ff-only; \
+		else \
+			git clone $(REPO_HTTPS_URL) ~/nixos-config; \
+			git -C ~/nixos-config remote set-url origin $(REPO_SSH_URL); \
+		fi; \
+	"
 
 .PHONY: secrets/backup secrets/restore
 
