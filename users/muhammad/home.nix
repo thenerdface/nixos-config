@@ -42,6 +42,42 @@
       set -g fish_greeting
       set -g theme_color_scheme dracula
 
+      # SSH agent: адаптация актуальной логики Хашимото.
+      function __ssh_agent_is_started
+        if test -f $SSH_ENV; and test -z "$SSH_AGENT_PID"
+          source $SSH_ENV > /dev/null
+        end
+
+        if test -z "$SSH_AGENT_PID"
+          return 1
+        end
+
+        ssh-add -l > /dev/null 2>&1
+        if test $status -eq 2
+          return 1
+        end
+      end
+
+      function __ssh_agent_start
+        ssh-agent -c | sed 's/^echo/#echo/' > $SSH_ENV
+        chmod 600 $SSH_ENV
+        source $SSH_ENV > /dev/null
+        ssh-add ~/.ssh/id_ed25519_github > /dev/null 2>&1
+      end
+
+      if not test -d $HOME/.ssh
+        mkdir -p $HOME/.ssh
+        chmod 0700 $HOME/.ssh
+      end
+
+      if test -z "$SSH_ENV"
+        set -xg SSH_ENV $HOME/.ssh/environment
+      end
+
+      if not __ssh_agent_is_started
+        __ssh_agent_start
+      end
+
       set -U fish_color_normal normal
       set -U fish_color_command F8F8F2
       set -U fish_color_quote F1FA8C
@@ -169,5 +205,6 @@
       };
     };
   };
+
   xdg.configFile."nvim".source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/nixos-config/users/muhammad/nvim";
 }
