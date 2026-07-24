@@ -28,6 +28,20 @@
   # Интеграция NixOS с VMware Fusion.
   virtualisation.vmware.guest.enable = true;
 
+  # Общая папка macOS через VMware Fusion — как у Хашимото.
+  fileSystems."/host" = {
+    fsType = "fuse./run/current-system/sw/bin/vmhgfs-fuse";
+    device = ".host:/";
+    options = [
+      "umask=22"
+      "uid=1000"
+      "gid=1000"
+      "allow_other"
+      "auto_unmount"
+      "defaults"
+    ];
+  };
+
   # X11/i3 — адаптация специализации i3 из конфигурации Хашимото.
   services.xserver = {
     enable = true;
@@ -61,6 +75,9 @@
     neovim
     gcc
     gnumake
+    cmake
+    ninja
+    gettext
     ripgrep
     fd
     tree-sitter
