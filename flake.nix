@@ -9,6 +9,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Поддержка NixOS внутри Windows WSL.
+    nixos-wsl = {
+      url = "github:nix-community/NixOS-WSL";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Та же версия bobthefish, которую закрепил Хашимото.
     theme-bobthefish = {
       url = "github:oh-my-fish/theme-bobthefish/e3b4d4eafc23516e35f162686f08a42edf844e40";
@@ -16,7 +22,13 @@
     };
   };
 
-  outputs = inputs@{ nixpkgs, home-manager, ... }: {
+  outputs = inputs@{
+    nixpkgs,
+    home-manager,
+    nixos-wsl,
+    ...
+  }: {
+    # NixOS VM на MacBook.
     nixosConfigurations.vm-aarch64 = nixpkgs.lib.nixosSystem {
       system = "aarch64-linux";
 
@@ -29,7 +41,38 @@
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
           home-manager.backupFileExtension = "hm-backup";
-          home-manager.extraSpecialArgs = { inherit inputs; };
+
+          home-manager.extraSpecialArgs = {
+            inherit inputs;
+            isWSL = false;
+          };
+
+          home-manager.users.muhammad =
+            import ./users/muhammad/home.nix;
+        }
+      ];
+    };
+
+    # NixOS внутри Windows WSL.
+    nixosConfigurations.wsl = nixpkgs.lib.nixosSystem {
+      system = "x86_64-linux";
+
+      modules = [
+        nixos-wsl.nixosModules.wsl
+        ./machines/wsl.nix
+        ./users/muhammad.nix
+
+        home-manager.nixosModules.home-manager
+
+        {
+          home-manager.useGlobalPkgs = true;
+          home-manager.useUserPackages = true;
+          home-manager.backupFileExtension = "hm-backup";
+
+          home-manager.extraSpecialArgs = {
+            inherit inputs;
+            isWSL = true;
+          };
 
           home-manager.users.muhammad =
             import ./users/muhammad/home.nix;

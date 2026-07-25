@@ -1,6 +1,10 @@
 { pkgs, ... }:
 
 {
+  # MacBook ARM, а Windows-компьютер использует x86_64.
+  # Это позволяет VM собирать систему для Windows.
+  boot.binfmt.emulatedSystems = [ "x86_64-linux" ];
+
   imports = [
     ./hardware/vm-aarch64.nix
     ../users/muhammad.nix

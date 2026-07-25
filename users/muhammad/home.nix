@@ -1,4 +1,4 @@
-{ pkgs, lib, inputs, config, ... }:
+{ pkgs, lib, inputs, config, isWSL, ... }:
 
 {
   home.username = "muhammad";
@@ -14,7 +14,7 @@
   ];
 
   # Те же Xft-параметры, что у Хашимото.
-  xresources.properties = {
+  xresources.properties = lib.mkIf (!isWSL) {
     "Xft.dpi" = 180;
     "Xft.autohint" = true;
     "Xft.antialias" = true;
@@ -102,7 +102,7 @@
     '';
   };
 
-  programs.kitty = {
+  programs.kitty = lib.mkIf (!isWSL) {
     enable = true;
 
     font = {
@@ -144,7 +144,7 @@
     };
   };
 
-  programs.i3status = {
+  programs.i3status = lib.mkIf (!isWSL) {
     enable = true;
 
     general = {
@@ -161,7 +161,7 @@
     };
   };
 
-  xsession.windowManager.i3 = {
+  xsession.windowManager.i3 = lib.mkIf (!isWSL) {
     enable = true;
 
     config = {

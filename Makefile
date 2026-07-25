@@ -145,3 +145,8 @@ secrets/restore:
 	find $(HOME)/.ssh -type f -exec chmod 600 {} \;
 	find $(HOME)/.gnupg -type d -exec chmod 700 {} \;
 	find $(HOME)/.gnupg -type f -exec chmod 600 {} \;
+
+# Собрать установочный файл NixOS для WSL.
+.PHONY: wsl
+wsl:
+	sudo nix run ".#nixosConfigurations.wsl.config.system.build.tarballBuilder"
