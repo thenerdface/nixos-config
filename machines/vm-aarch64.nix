@@ -71,6 +71,7 @@
 
   # Минимальные инструменты для Git и Kickstart.nvim.
   environment.systemPackages = with pkgs; [
+    go
     git
     neovim
     gcc
@@ -83,7 +84,6 @@
     tree-sitter
     unzip
     curl
-
     kitty
     i3status
     rofi

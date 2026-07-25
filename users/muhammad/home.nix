@@ -10,6 +10,7 @@
 
   home.packages = [
     pkgs.fira-code
+    pkgs.xxd
   ];
 
   # Те же Xft-параметры, что у Хашимото.
