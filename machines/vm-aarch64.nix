@@ -1,8 +1,11 @@
 { pkgs, ... }:
 
 {
-  # Позволяет ARM-виртуалке запускать x86_64-программы.
-  boot.binfmt.emulatedSystems = [ "x86_64-linux" ];
+  # Позволяет ARM-виртуалке запускать x86_64-программы, в том числе внутри chroot.
+  boot.binfmt = {
+    emulatedSystems = [ "x86_64-linux" ];
+    preferStaticEmulators = true;
+  };
 
   imports = [
     ./hardware/vm-aarch64.nix
