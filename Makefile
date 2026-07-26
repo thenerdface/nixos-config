@@ -146,7 +146,13 @@ secrets/restore:
 	find $(HOME)/.gnupg -type d -exec chmod 700 {} \;
 	find $(HOME)/.gnupg -type f -exec chmod 600 {} \;
 
-# Собрать установочный файл NixOS для WSL.
+# Локальная сборка x86_64-образа WSL поддерживается только на x86_64 Linux.
+# На ARM используй GitHub Actions workflow "Build NixOS WSL image".
 .PHONY: wsl
 wsl:
+	@if [ "$$(uname -m)" != "x86_64" ]; then \
+		echo "Error: local WSL image build requires an x86_64 Linux host."; \
+		echo "Run the GitHub Actions workflow: Build NixOS WSL image."; \
+		exit 1; \
+	fi
 	sudo nix run ".#nixosConfigurations.wsl.config.system.build.tarballBuilder"
