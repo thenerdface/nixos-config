@@ -1,0 +1,56 @@
+name: Build NixOS WSL image
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - "flake.nix"
+      - "flake.lock"
+      - "machines/wsl.nix"
+      - "users/**"
+      - ".github/workflows/build-wsl.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build-wsl:
+    name: Build x86_64 NixOS-WSL image
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build tarball builder
+        id: builder
+        shell: bash
+        run: |
+          set -euo pipefail
+          builder=$(nix build \
+            --no-link \
+            --print-out-paths \
+            .#nixosConfigurations.wsl.config.system.build.tarballBuilder)
+          echo "path=$builder" >> "$GITHUB_OUTPUT"
+
+      - name: Build WSL image
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo "${{ steps.builder.outputs.path }}/bin/nixos-wsl-tarball-builder" nixos.wsl
+          test -s nixos.wsl
+          ls -lh nixos.wsl
+
+      - name: Upload WSL image
+        uses: actions/upload-artifact@v4
+        with:
+          name: nixos-wsl-x86_64
+          path: nixos.wsl
+          if-no-files-found: error
+          retention-days: 14
