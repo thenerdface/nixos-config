@@ -4,10 +4,6 @@
   # Позволяет ARM-виртуалке запускать x86_64-программы.
   boot.binfmt.emulatedSystems = [ "x86_64-linux" ];
 
-  # Нужен для запуска x86_64-программ внутри chroot,
-  # который использует актуальный tarballBuilder NixOS-WSL.
-  boot.binfmt.preferStaticEmulators = true;
-
   imports = [
     ./hardware/vm-aarch64.nix
     ../users/muhammad.nix
