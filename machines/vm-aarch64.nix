@@ -54,7 +54,21 @@
     # У Хашимото xterm также отключён.
     desktopManager.xterm.enable = false;
 
-    displayManager.lightdm.enable = true;
+    displayManager = {
+      lightdm.enable = true;
+
+      # VMware иногда оставляет X11 в старом разрешении после полноэкранных
+      # приложений или изменения размера окна. Применяем preferred-режим
+      # перед LightDM и ещё раз при запуске пользовательской сессии.
+      setupCommands = ''
+        ${pkgs.xrandr}/bin/xrandr --output Virtual-1 --auto
+      '';
+      sessionCommands = ''
+        ${pkgs.xrandr}/bin/xrandr --output Virtual-1 --auto
+        ${pkgs.xset}/bin/xset r rate 200 40
+      '';
+    };
+
     windowManager.i3.enable = true;
   };
 
@@ -92,6 +106,11 @@
     rofi
     xclip
     gtkmm3
+
+    # Та же ручная команда восстановления разрешения, что у Хашимото.
+    (pkgs.writeShellScriptBin "xrandr-auto" ''
+      ${pkgs.xrandr}/bin/xrandr --output Virtual-1 --auto
+    '')
   ];
 
   system.stateVersion = "26.05";
