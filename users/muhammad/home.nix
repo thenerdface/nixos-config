@@ -13,9 +13,10 @@
     pkgs.xxd
   ];
 
-  # Те же Xft-параметры, что у Хашимото.
+  # Один и тот же стандартный DPI используется X11 и Xft. Это предотвращает
+  # скачки масштаба после nixos-rebuild, перезагрузки или смены режима VMware.
   xresources.properties = lib.mkIf (!isWSL) {
-    "Xft.dpi" = 180;
+    "Xft.dpi" = 96;
     "Xft.autohint" = true;
     "Xft.antialias" = true;
     "Xft.hinting" = true;
@@ -138,6 +139,13 @@
     keybindings = {
       "super+v" = "paste_from_clipboard";
       "super+c" = "copy_or_interrupt";
+
+      # Работают и через VMware, где Command/Super может перехватываться.
+      "ctrl+shift+equal" = "increase_font_size";
+      "ctrl+shift+minus" = "decrease_font_size";
+      "ctrl+shift+0" = "restore_font_size";
+
+      # Оставляем привычные Command/Super-сочетания там, где VMware их пропускает.
       "super+equal" = "increase_font_size";
       "super+minus" = "decrease_font_size";
       "super+0" = "restore_font_size";
