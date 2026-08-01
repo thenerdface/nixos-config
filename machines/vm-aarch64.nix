@@ -7,6 +7,7 @@
   imports = [
     ./hardware/vm-aarch64.nix
     ../users/muhammad.nix
+    ../modules/virtualisation/docker.nix
   ];
 
   # VMware запускает VM через UEFI.
@@ -45,11 +46,12 @@
     ];
   };
 
-  # X11/i3 — адаптация специализации i3 из конфигурации Хашимото.
+  # Зафиксированный стандартный DPI. Он не меняется после rebuild/reboot и не
+  # зависит от того, какое Retina-масштабирование выбрал VMware Fusion.
   services.xserver = {
     enable = true;
     xkb.layout = "us";
-    dpi = 220;
+    dpi = 96;
 
     # У Хашимото xterm также отключён.
     desktopManager.xterm.enable = false;
