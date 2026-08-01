@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, lib, ... }:
 
 {
   # Позволяет ARM-виртуалке запускать x86_64-программы.
@@ -46,18 +46,26 @@
     ];
   };
 
-  # Зафиксированный стандартный DPI. Он не меняется после rebuild/reboot и не
-  # зависит от того, какое Retina-масштабирование выбрал VMware Fusion.
+  # Retina: VMware отдаёт гостю нативное разрешение экрана, поэтому интерфейс
+  # должен отрисовываться с честным масштабом 2x, а не растягиваться из 96 DPI.
+  # Так текст остаётся нормального размера и резким после reboot/rebuild.
   services.xserver = {
     enable = true;
     xkb.layout = "us";
-    dpi = 96;
+    dpi = 192;
 
     # У Хашимото xterm также отключён.
     desktopManager.xterm.enable = false;
 
     displayManager.lightdm.enable = true;
     windowManager.i3.enable = true;
+  };
+
+  # Переопределение только для Retina-VM. Для WSL общий home.nix не меняется.
+  # Grayscale antialiasing лучше подходит для Retina и не даёт цветных краёв.
+  home-manager.users.muhammad.xresources.properties = {
+    "Xft.dpi" = lib.mkForce 192;
+    "Xft.rgba" = lib.mkForce "none";
   };
 
   services.displayManager.defaultSession = "none+i3";
