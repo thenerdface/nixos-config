@@ -9,9 +9,9 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Поддержка NixOS внутри Windows WSL.
+    # Match NixOS-WSL to the same stable NixOS release as nixpkgs.
     nixos-wsl = {
-      url = "github:nix-community/NixOS-WSL";
+      url = "github:nix-community/NixOS-WSL/release-26.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -30,8 +30,6 @@
   }: {
     # NixOS VM на MacBook.
     nixosConfigurations.vm-aarch64 = nixpkgs.lib.nixosSystem {
-      system = "aarch64-linux";
-
       modules = [
         ./machines/vm-aarch64.nix
 
@@ -55,8 +53,6 @@
 
     # NixOS внутри Windows WSL.
     nixosConfigurations.wsl = nixpkgs.lib.nixosSystem {
-      system = "x86_64-linux";
-
       modules = [
         nixos-wsl.nixosModules.wsl
         ./machines/wsl.nix
@@ -79,5 +75,9 @@
         }
       ];
     };
+
+    # `nix fmt` uses the formatter provided by the pinned nixpkgs revision.
+    formatter.aarch64-linux = nixpkgs.legacyPackages.aarch64-linux.nixfmt;
+    formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixfmt;
   };
 }

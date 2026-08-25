@@ -1,6 +1,9 @@
 { pkgs, ... }:
 
 {
+  # Platform belongs to the host configuration rather than flake wiring.
+  nixpkgs.hostPlatform = "x86_64-linux";
+
   # Запускаем NixOS внутри Windows WSL.
   wsl = {
     enable = true;
@@ -40,5 +43,6 @@
     curl
   ];
 
+  # Do not bump this during normal upgrades; it preserves stateful defaults.
   system.stateVersion = "26.05";
 }

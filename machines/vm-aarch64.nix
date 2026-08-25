@@ -1,6 +1,9 @@
 { pkgs, lib, ... }:
 
 {
+  # Platform belongs to the host configuration rather than flake wiring.
+  nixpkgs.hostPlatform = "aarch64-linux";
+
   # Позволяет ARM-виртуалке запускать x86_64-программы.
   boot.binfmt.emulatedSystems = [ "x86_64-linux" ];
 
@@ -104,5 +107,6 @@
     gtkmm3
   ];
 
+  # Do not bump this during normal upgrades; it preserves stateful defaults.
   system.stateVersion = "26.05";
 }
