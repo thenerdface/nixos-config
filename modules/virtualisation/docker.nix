@@ -19,5 +19,8 @@
   users.users.muhammad.extraGroups = [ "docker" ];
 
   # Frontend and API are reachable from the macOS host by the VM's IP address.
-  networking.firewall.allowedTCPPorts = [ 5173 8787 ];
+  networking.firewall.allowedTCPPorts = [
+    5173
+    8787
+  ];
 }

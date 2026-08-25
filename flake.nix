@@ -1,5 +1,5 @@
 {
-  description = "Muhammad's NixOS configuration";
+  description = "My NixOS Configuration";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
@@ -22,62 +22,64 @@
     };
   };
 
-  outputs = inputs@{
-    nixpkgs,
-    home-manager,
-    nixos-wsl,
-    ...
-  }: {
-    # NixOS VM на MacBook.
-    nixosConfigurations.vm-aarch64 = nixpkgs.lib.nixosSystem {
-      modules = [
-        ./machines/vm-aarch64.nix
+  outputs =
+    inputs@{
+      nixpkgs,
+      home-manager,
+      nixos-wsl,
+      ...
+    }:
+    {
+      # NixOS VM на MacBook.
+      nixosConfigurations.vm-aarch64 = nixpkgs.lib.nixosSystem {
+        modules = [
+          ./machines/vm-aarch64.nix
+          ./users/muhammad/nixos.nix
 
-        home-manager.nixosModules.home-manager
+          home-manager.nixosModules.home-manager
 
-        {
-          home-manager.useGlobalPkgs = true;
-          home-manager.useUserPackages = true;
-          home-manager.backupFileExtension = "hm-backup";
+          {
+            home-manager.useGlobalPkgs = true;
+            home-manager.useUserPackages = true;
+            home-manager.backupFileExtension = "hm-backup";
 
-          home-manager.extraSpecialArgs = {
-            inherit inputs;
-            isWSL = false;
-          };
+            home-manager.extraSpecialArgs = {
+              inherit inputs;
+              isWSL = false;
+            };
 
-          home-manager.users.muhammad =
-            import ./users/muhammad/home.nix;
-        }
-      ];
+            home-manager.users.muhammad = import ./users/muhammad/home-manager.nix;
+          }
+        ];
+      };
+
+      # NixOS внутри Windows WSL.
+      nixosConfigurations.wsl = nixpkgs.lib.nixosSystem {
+        modules = [
+          nixos-wsl.nixosModules.wsl
+          ./machines/wsl.nix
+          ./users/muhammad/nixos.nix
+
+          home-manager.nixosModules.home-manager
+
+          {
+            home-manager.useGlobalPkgs = true;
+            home-manager.useUserPackages = true;
+            home-manager.backupFileExtension = "hm-backup";
+
+            home-manager.extraSpecialArgs = {
+              inherit inputs;
+              isWSL = true;
+            };
+
+            home-manager.users.muhammad = import ./users/muhammad/home-manager.nix;
+          }
+        ];
+      };
+
+      # `nix fmt` works on every platform used to maintain or build this flake.
+      formatter.aarch64-darwin = nixpkgs.legacyPackages.aarch64-darwin.nixfmt-tree;
+      formatter.aarch64-linux = nixpkgs.legacyPackages.aarch64-linux.nixfmt-tree;
+      formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixfmt-tree;
     };
-
-    # NixOS внутри Windows WSL.
-    nixosConfigurations.wsl = nixpkgs.lib.nixosSystem {
-      modules = [
-        nixos-wsl.nixosModules.wsl
-        ./machines/wsl.nix
-        ./users/muhammad.nix
-
-        home-manager.nixosModules.home-manager
-
-        {
-          home-manager.useGlobalPkgs = true;
-          home-manager.useUserPackages = true;
-          home-manager.backupFileExtension = "hm-backup";
-
-          home-manager.extraSpecialArgs = {
-            inherit inputs;
-            isWSL = true;
-          };
-
-          home-manager.users.muhammad =
-            import ./users/muhammad/home.nix;
-        }
-      ];
-    };
-
-    # `nix fmt` uses the formatter provided by the pinned nixpkgs revision.
-    formatter.aarch64-linux = nixpkgs.legacyPackages.aarch64-linux.nixfmt;
-    formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixfmt;
-  };
 }

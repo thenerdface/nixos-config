@@ -2,8 +2,6 @@
 
 {
   users.mutableUsers = false;
-
-
   users.users.muhammad = {
     isNormalUser = true;
     home = "/home/muhammad";
