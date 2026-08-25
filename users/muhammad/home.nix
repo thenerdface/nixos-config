@@ -6,6 +6,7 @@
   home.stateVersion = "26.05";
 
   programs.home-manager.enable = true;
+  programs.gh.enable = true;
   fonts.fontconfig.enable = true;
 
   home.packages = [
