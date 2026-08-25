@@ -1,2 +1,5 @@
+.DS_Store
+.direnv/
 backup.tar.gz
 result
+result-*

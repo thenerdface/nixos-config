@@ -9,7 +9,7 @@
 
   imports = [
     ./hardware/vm-aarch64.nix
-    ../users/muhammad.nix
+    ../modules/nixos/common.nix
     ../modules/virtualisation/docker.nix
   ];
 
@@ -64,7 +64,7 @@
     windowManager.i3.enable = true;
   };
 
-  # Переопределение только для Retina-VM. Для WSL общий home.nix не меняется.
+  # Переопределение только для Retina-VM. Общий Home Manager модуль не меняется.
   # Grayscale antialiasing лучше подходит для Retina и не даёт цветных краёв.
   home-manager.users.muhammad.xresources.properties = {
     "Xft.dpi" = lib.mkForce 192;
@@ -76,30 +76,8 @@
   # Нужен для управления VM с терминала macOS.
   services.openssh.enable = true;
 
-  # Fish зарегистрирован как системная оболочка.
-  programs.fish.enable = true;
-
-  # Разрешаем команды nix и работу с flakes.
-  nix.settings.experimental-features = [
-    "nix-command"
-    "flakes"
-  ];
-
-  # Минимальные инструменты для Git и Kickstart.nvim.
+  # Графические инструменты нужны только в VM; консольный набор общий с WSL.
   environment.systemPackages = with pkgs; [
-    go
-    git
-    neovim
-    gcc
-    gnumake
-    cmake
-    ninja
-    gettext
-    ripgrep
-    fd
-    tree-sitter
-    unzip
-    curl
     kitty
     i3status
     rofi

@@ -4,6 +4,8 @@ NIXNAME ?= vm-aarch64
 NIXUSER ?= muhammad
 NIXBLOCKDEVICE ?= sda
 
+.DEFAULT_GOAL := help
+
 REPO_HTTPS_URL ?= https://github.com/thenerdface/nixos-config.git
 REPO_SSH_URL ?= git@github.com:thenerdface/nixos-config.git
 
@@ -15,6 +17,28 @@ SSH_OPTIONS := \
 	-i ~/.ssh/id_ed25519_nixos_vm \
 	-o UserKnownHostsFile=/dev/null \
 	-o StrictHostKeyChecking=no
+
+.PHONY: help
+
+help:
+	@printf '%s\n' \
+		'Usage: make <target> [VARIABLE=value]' \
+		'' \
+		'VM setup (run from macOS):' \
+		'  vm/bootstrap0   Partition the VM disk and install bootstrap NixOS (destructive)' \
+		'  vm/bootstrap    Apply this flake, restore secrets, and reboot the VM' \
+		'  vm/dns          Repair DNS as root (used by vm/bootstrap)' \
+		'  vm/copy         Copy this repository to /nix-config in the VM' \
+		'  vm/switch       Apply the copied flake configuration' \
+		'  vm/secrets      Restore the external SSH/GPG archive in the VM' \
+		'  vm/repo         Clone or fast-forward ~/nixos-config in the VM' \
+		'' \
+		'Secrets:' \
+		'  secrets/backup  Create a local SSH/GPG archive' \
+		'  secrets/restore Restore a local SSH/GPG archive' \
+		'' \
+		'WSL:' \
+		'  wsl             Build the x86_64 NixOS-WSL image on x86_64 Linux'
 
 .PHONY: vm/bootstrap0
 
