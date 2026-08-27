@@ -19,6 +19,9 @@
   home.packages = [
     pkgs.fira-code
     pkgs.xxd
+    # Keep the compiler and its language server in the same pinned nixpkgs set.
+    pkgs.zig
+    pkgs.zls
   ];
 
   # Один и тот же стандартный DPI используется X11 и Xft. Это предотвращает

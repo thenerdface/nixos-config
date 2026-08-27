@@ -183,6 +183,29 @@ The `build` step creates the system closure without activating it.
 it the default boot entry. Use `switch` after the test succeeds. On WSL, select
 `.#wsl` instead.
 
+## First Zig program
+
+Zig and its language server, ZLS, are installed by Home Manager from the same
+pinned `nixpkgs` revision. After applying the configuration, start a project:
+
+```sh
+mkdir -p ~/code/zig/hello-world
+cd ~/code/zig/hello-world
+zig init
+nvim src/main.zig
+```
+
+Neovim starts ZLS automatically for `.zig` files. Run `:LspInfo` in Neovim to
+confirm that `zls` is attached. Build and run the generated example with:
+
+```sh
+zig build run
+zig build test
+```
+
+Do not install ZLS through `:Mason`: Nix manages the single shared compiler and
+language-server version for both the VM and WSL.
+
 When adding a new file, stage it before evaluating the local Git flake so Nix can
 see it:
 
