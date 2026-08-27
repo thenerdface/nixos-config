@@ -14,6 +14,7 @@
 
   programs.home-manager.enable = true;
   programs.gh.enable = true;
+  programs.neovim.enable = true;
   fonts.fontconfig.enable = true;
 
   home.packages = [
@@ -24,8 +25,7 @@
     pkgs.zls
   ];
 
-  # Один и тот же стандартный DPI используется X11 и Xft. Это предотвращает
-  # скачки масштаба после nixos-rebuild, перезагрузки или смены режима VMware.
+  # One consistent DPI for X11/Xft avoids scale changes after rebuild/reboot.
   xresources.properties = lib.mkIf (!isWSL) {
     "Xft.dpi" = 96;
     "Xft.autohint" = true;
@@ -55,7 +55,7 @@
       set -g fish_greeting
       set -g theme_color_scheme dracula
 
-      # SSH agent: адаптация актуальной логики Хашимото.
+      # Keep the existing SSH-agent behavior; it is intentionally unchanged here.
       function __ssh_agent_is_started
         if test -f $SSH_ENV; and test -z "$SSH_AGENT_PID"
           source $SSH_ENV > /dev/null
@@ -150,13 +150,9 @@
     keybindings = {
       "super+v" = "paste_from_clipboard";
       "super+c" = "copy_or_interrupt";
-
-      # Работают и через VMware, где Command/Super может перехватываться.
       "ctrl+shift+equal" = "increase_font_size";
       "ctrl+shift+minus" = "decrease_font_size";
       "ctrl+shift+0" = "restore_font_size";
-
-      # Оставляем привычные Command/Super-сочетания там, где VMware их пропускает.
       "super+equal" = "increase_font_size";
       "super+minus" = "decrease_font_size";
       "super+0" = "restore_font_size";
@@ -209,23 +205,22 @@
         {
           position = "bottom";
           statusCommand = "${pkgs.i3status}/bin/i3status";
-
           fonts = {
             names = [ "Fira Code" ];
             size = 8.0;
           };
-
           colors.background = "#1D1F21";
         }
       ];
 
-      # Command+V должен доходить до Kitty.
       keybindings = lib.mkOptionDefault {
         "Mod4+v" = null;
       };
     };
   };
 
+  # Keep the Neovim tree in the repository as the live user configuration.
+  # This matches the development-oriented workflow used by Hashimoto's config.
   xdg.configFile."nvim".source =
     config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/nixos-config/users/muhammad/nvim";
 }

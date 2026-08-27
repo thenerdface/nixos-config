@@ -11,10 +11,10 @@
   ];
 
   # Console development tools shared by the VM and WSL.
+  # User-facing applications are managed by Home Manager instead.
   environment.systemPackages = with pkgs; [
     go
     git
-    neovim
     gcc
     gnumake
     cmake
