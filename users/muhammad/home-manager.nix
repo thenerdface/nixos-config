@@ -14,18 +14,16 @@
 
   programs.home-manager.enable = true;
   programs.gh.enable = true;
-  programs.neovim.enable = true;
   fonts.fontconfig.enable = true;
 
   home.packages = [
     pkgs.fira-code
     pkgs.xxd
-    # Keep the compiler and its language server in the same pinned nixpkgs set.
+    pkgs.neovim
     pkgs.zig
     pkgs.zls
   ];
 
-  # One consistent DPI for X11/Xft avoids scale changes after rebuild/reboot.
   xresources.properties = lib.mkIf (!isWSL) {
     "Xft.dpi" = 96;
     "Xft.autohint" = true;
@@ -55,16 +53,14 @@
       set -g fish_greeting
       set -g theme_color_scheme dracula
 
-      # Keep the existing SSH-agent behavior; it is intentionally unchanged here.
+      # Keep the existing SSH-agent behavior unchanged.
       function __ssh_agent_is_started
         if test -f $SSH_ENV; and test -z "$SSH_AGENT_PID"
           source $SSH_ENV > /dev/null
         end
-
         if test -z "$SSH_AGENT_PID"
           return 1
         end
-
         ssh-add -l > /dev/null 2>&1
         if test $status -eq 2
           return 1
@@ -116,19 +112,16 @@
 
   programs.kitty = lib.mkIf (!isWSL) {
     enable = true;
-
     font = {
       name = "Fira Code";
       size = 12.0;
     };
-
     settings = {
       foreground = "#dcdfe4";
       background = "#282c34";
       selection_foreground = "#000000";
       selection_background = "#FFFACD";
       url_color = "#0087BD";
-
       color0 = "#282c34";
       color8 = "#5d677a";
       color1 = "#e06c75";
@@ -146,7 +139,6 @@
       color7 = "#dcdfe4";
       color15 = "#dcdfe4";
     };
-
     keybindings = {
       "super+v" = "paste_from_clipboard";
       "super+c" = "copy_or_interrupt";
@@ -161,14 +153,12 @@
 
   programs.i3status = lib.mkIf (!isWSL) {
     enable = true;
-
     general = {
       colors = true;
       color_good = "#8C9440";
       color_bad = "#A54242";
       color_degraded = "#DE935F";
     };
-
     modules = {
       "ipv6".enable = false;
       "wireless _first_".enable = false;
@@ -178,29 +168,23 @@
 
   xsession.windowManager.i3 = lib.mkIf (!isWSL) {
     enable = true;
-
     config = {
       modifier = "Mod4";
       terminal = "kitty";
       menu = "rofi -show drun";
-
       fonts = {
         names = [ "Fira Code" ];
         size = 8.0;
       };
-
       focus.followMouse = false;
-
       window = {
         titlebar = false;
         border = 2;
       };
-
       floating = {
         titlebar = false;
         border = 2;
       };
-
       bars = [
         {
           position = "bottom";
@@ -212,15 +196,14 @@
           colors.background = "#1D1F21";
         }
       ];
-
       keybindings = lib.mkOptionDefault {
         "Mod4+v" = null;
       };
     };
   };
 
-  # Keep the Neovim tree in the repository as the live user configuration.
-  # This matches the development-oriented workflow used by Hashimoto's config.
+  # The repository tree is the live Neovim config, so editing Lua does not
+  # require a Nix rebuild. Home Manager only manages the symlink itself.
   xdg.configFile."nvim".source =
     config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/nixos-config/users/muhammad/nvim";
 }
