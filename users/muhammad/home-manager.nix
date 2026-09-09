@@ -70,7 +70,7 @@ in
   home.pointerCursor = lib.mkIf (isLinux && !isWSL) {
     name = "Vanilla-DMZ";
     package = pkgs.vanilla-dmz;
-    size = 128;
+    size = 96;
     x11.enable = true;
   };
 
@@ -107,6 +107,7 @@ in
     enable = true;
     font = {
       name = "Fira Code";
+      # Calibrated in-guest: 10 + two increase_font_size steps.
       size = 12.0;
     };
     settings = {
@@ -135,9 +136,15 @@ in
     keybindings = {
       "super+v" = "paste_from_clipboard";
       "super+c" = "copy_or_interrupt";
+      # VMware often eats ⌘; prefer Ctrl(+Shift) for font size from the Mac host.
       "ctrl+shift+equal" = "increase_font_size";
+      "ctrl+shift+plus" = "increase_font_size";
       "ctrl+shift+minus" = "decrease_font_size";
       "ctrl+shift+0" = "restore_font_size";
+      "ctrl+equal" = "increase_font_size";
+      "ctrl+plus" = "increase_font_size";
+      "ctrl+minus" = "decrease_font_size";
+      "ctrl+0" = "restore_font_size";
       "super+equal" = "increase_font_size";
       "super+minus" = "decrease_font_size";
       "super+0" = "restore_font_size";

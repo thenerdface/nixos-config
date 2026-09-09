@@ -17,8 +17,9 @@
     services.xserver = {
       enable = true;
       xkb.layout = "us";
-      # Retina guest: VMware exposes the native panel resolution; draw at 2x.
-      dpi = 192;
+      # HiDPI for VMware on Apple Silicon. 144 reads smaller than mitchellh's 220
+      # in a windowed guest; bump if the UI feels tiny on a full-screen Retina panel.
+      dpi = 144;
 
       desktopManager = {
         xterm.enable = false;
@@ -39,7 +40,7 @@
 
     # Grayscale AA avoids colored fringes on Retina under X11.
     home-manager.users.${currentSystemUser}.xresources.properties = {
-      "Xft.dpi" = lib.mkForce 192;
+      "Xft.dpi" = lib.mkForce 144;
       "Xft.rgba" = lib.mkForce "none";
     };
 
