@@ -15,66 +15,43 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Та же версия bobthefish, которую закрепил Хашимото.
+    # Same bobthefish pin mitchellh uses, plus the Fish plugins his shell stack expects.
     theme-bobthefish = {
       url = "github:oh-my-fish/theme-bobthefish/e3b4d4eafc23516e35f162686f08a42edf844e40";
+      flake = false;
+    };
+    fish-fzf = {
+      url = "github:jethrokuan/fzf/24f4739fc1dffafcc0da3ccfbbd14d9c7d31827a";
+      flake = false;
+    };
+    fish-foreign-env = {
+      url = "github:oh-my-fish/plugin-foreign-env/dddd9213272a0ab848d474d0cbde12ad034e65bc";
       flake = false;
     };
   };
 
   outputs =
-    inputs@{
-      nixpkgs,
-      home-manager,
-      nixos-wsl,
-      ...
-    }:
     {
-      # NixOS VM на MacBook.
-      nixosConfigurations.vm-aarch64 = nixpkgs.lib.nixosSystem {
-        modules = [
-          ./machines/vm-aarch64.nix
-          ./users/muhammad/nixos.nix
-
-          home-manager.nixosModules.home-manager
-
-          {
-            home-manager.useGlobalPkgs = true;
-            home-manager.useUserPackages = true;
-            home-manager.backupFileExtension = "hm-backup";
-
-            home-manager.extraSpecialArgs = {
-              inherit inputs;
-              isWSL = false;
-            };
-
-            home-manager.users.muhammad = import ./users/muhammad/home-manager.nix;
-          }
-        ];
+      nixpkgs,
+      ...
+    }@inputs:
+    let
+      mkSystem = import ./lib/mksystem.nix {
+        inherit nixpkgs inputs;
+      };
+    in
+    {
+      # NixOS VM on MacBook (VMware Fusion, Apple Silicon).
+      nixosConfigurations.vm-aarch64 = mkSystem "vm-aarch64" {
+        system = "aarch64-linux";
+        user = "muhammad";
       };
 
-      # NixOS внутри Windows WSL.
-      nixosConfigurations.wsl = nixpkgs.lib.nixosSystem {
-        modules = [
-          nixos-wsl.nixosModules.wsl
-          ./machines/wsl.nix
-          ./users/muhammad/nixos.nix
-
-          home-manager.nixosModules.home-manager
-
-          {
-            home-manager.useGlobalPkgs = true;
-            home-manager.useUserPackages = true;
-            home-manager.backupFileExtension = "hm-backup";
-
-            home-manager.extraSpecialArgs = {
-              inherit inputs;
-              isWSL = true;
-            };
-
-            home-manager.users.muhammad = import ./users/muhammad/home-manager.nix;
-          }
-        ];
+      # NixOS inside Windows WSL.
+      nixosConfigurations.wsl = mkSystem "wsl" {
+        system = "x86_64-linux";
+        user = "muhammad";
+        wsl = true;
       };
 
       # `nix fmt` works on every platform used to maintain or build this flake.

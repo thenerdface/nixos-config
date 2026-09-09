@@ -1,0 +1,113 @@
+#-------------------------------------------------------------------------------
+# SSH Agent
+#-------------------------------------------------------------------------------
+function __ssh_agent_is_started -d "check if ssh agent is already started"
+	if begin; test -f $SSH_ENV; and test -z "$SSH_AGENT_PID"; end
+		source $SSH_ENV > /dev/null
+	end
+
+	if test -z "$SSH_AGENT_PID"
+		return 1
+	end
+
+	ssh-add -l > /dev/null 2>&1
+	if test $status -eq 2
+		return 1
+	end
+end
+
+function __ssh_agent_start -d "start a new ssh agent"
+  ssh-agent -c | sed 's/^echo/#echo/' > $SSH_ENV
+  chmod 600 $SSH_ENV
+  source $SSH_ENV > /dev/null
+  # Prefer the GitHub key used on this machine; fall back to default identities.
+  if test -f $HOME/.ssh/id_ed25519_github
+    ssh-add $HOME/.ssh/id_ed25519_github > /dev/null 2>&1
+  else
+    ssh-add > /dev/null 2>&1
+  end
+end
+
+if not test -d $HOME/.ssh
+    mkdir -p $HOME/.ssh
+    chmod 0700 $HOME/.ssh
+end
+
+if test -d $HOME/.gnupg
+    chmod 0700 $HOME/.gnupg
+end
+
+if test -z "$SSH_ENV"
+    set -xg SSH_ENV $HOME/.ssh/environment
+end
+
+if not __ssh_agent_is_started
+    __ssh_agent_start
+end
+
+#-------------------------------------------------------------------------------
+# Programs
+#-------------------------------------------------------------------------------
+# Add ~/.local/bin (also linked system-wide via environment.localBinInPath).
+set -q PATH; or set PATH ''
+set -gx PATH "$HOME/.local/bin" $PATH
+
+#-------------------------------------------------------------------------------
+# Prompt
+#-------------------------------------------------------------------------------
+set --universal --erase fish_greeting
+function fish_greeting; end
+
+# bobthefish theme
+set -g theme_color_scheme dracula
+
+# Color scheme (same palette mitchellh uses with bobthefish).
+set -U fish_color_normal normal
+set -U fish_color_command F8F8F2
+set -U fish_color_quote F1FA8C
+set -U fish_color_redirection 8BE9FD
+set -U fish_color_end 50FA7B
+set -U fish_color_error FF5555
+set -U fish_color_param 5FFFFF
+set -U fish_color_comment 6272A4
+set -U fish_color_match --background=brblue
+set -U fish_color_selection white --bold --background=brblack
+set -U fish_color_search_match bryellow --background=brblack
+set -U fish_color_history_current --bold
+set -U fish_color_operator 00a6b2
+set -U fish_color_escape 00a6b2
+set -U fish_color_cwd green
+set -U fish_color_cwd_root red
+set -U fish_color_valid_path --underline
+set -U fish_color_autosuggestion BD93F9
+set -U fish_color_user brgreen
+set -U fish_color_host normal
+set -U fish_color_cancel -r
+set -U fish_pager_color_completion normal
+set -U fish_pager_color_description B3A06D yellow
+set -U fish_pager_color_prefix white --bold --underline
+set -U fish_pager_color_progress brwhite --background=cyan
+
+# Concise nix-shell segment for bobthefish.
+function __bobthefish_prompt_nix -S -d 'Display current nix environment'
+    [ "$theme_display_nix" = 'no' -o -z "$IN_NIX_SHELL" ]
+    and return
+
+    __bobthefish_start_segment $color_nix
+    echo -ns N ' '
+    set_color normal
+end
+
+#-------------------------------------------------------------------------------
+# Vars
+#-------------------------------------------------------------------------------
+if isatty
+    set -x GPG_TTY (tty)
+end
+
+set -gx EDITOR nvim
+
+#-------------------------------------------------------------------------------
+# Functions
+#-------------------------------------------------------------------------------
+alias fnix "nix-shell --run fish"

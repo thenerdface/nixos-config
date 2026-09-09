@@ -1,7 +1,17 @@
 { pkgs, ... }:
 
 {
+  # home-manager fish completions and related paths.
+  environment.pathsToLink = [ "/share/fish" ];
+  environment.localBinInPath = true;
+
+  programs.fish.enable = true;
+
+  # Helps Neovim plugin native binaries (and similar) find dynamic libraries.
+  programs.nix-ld.enable = true;
+
   users.mutableUsers = false;
+
   users.users.muhammad = {
     isNormalUser = true;
     home = "/home/muhammad";

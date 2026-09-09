@@ -1,12 +1,32 @@
+{ isWSL, inputs, ... }:
+
 {
-  pkgs,
-  lib,
-  inputs,
   config,
-  isWSL,
+  lib,
+  pkgs,
   ...
 }:
 
+let
+  isLinux = pkgs.stdenv.isLinux;
+
+  shellAliases = {
+    ga = "git add";
+    gc = "git commit";
+    gco = "git checkout";
+    gcp = "git cherry-pick";
+    gdiff = "git diff";
+    gl = "git log --oneline --graph --decorate -n 20";
+    gp = "git push";
+    gs = "git status";
+    gt = "git tag";
+  }
+  // lib.optionalAttrs (isLinux && !isWSL) {
+    # Muscle memory from macOS hosts (needs xclip from the VM system profile).
+    pbcopy = "xclip -selection clipboard";
+    pbpaste = "xclip -selection clipboard -o";
+  };
+in
 {
   home.username = "muhammad";
   home.homeDirectory = "/home/muhammad";
@@ -15,6 +35,7 @@
   programs.home-manager.enable = true;
   programs.gh.enable = true;
   fonts.fontconfig.enable = true;
+  xdg.enable = true;
 
   home.packages = [
     pkgs.fira-code
@@ -22,8 +43,20 @@
     pkgs.neovim
     pkgs.zig
     pkgs.zls
+  ]
+  ++ lib.optionals (isLinux && !isWSL) [
+    pkgs.rofi
   ];
 
+  home.sessionVariables = {
+    LANG = "en_US.UTF-8";
+    LC_CTYPE = "en_US.UTF-8";
+    LC_ALL = "en_US.UTF-8";
+    EDITOR = "nvim";
+    PAGER = "less -FirSwX";
+  };
+
+  # Baseline Xft settings for X11 sessions. The i3 specialisation forces Retina DPI.
   xresources.properties = lib.mkIf (!isWSL) {
     "Xft.dpi" = 96;
     "Xft.autohint" = true;
@@ -34,82 +67,42 @@
     "Xft.lcdfilter" = "lcddefault";
   };
 
+  home.pointerCursor = lib.mkIf (isLinux && !isWSL) {
+    name = "Vanilla-DMZ";
+    package = pkgs.vanilla-dmz;
+    size = 128;
+    x11.enable = true;
+  };
+
   programs.fish = {
     enable = true;
+    shellAliases = shellAliases;
 
     plugins = [
       {
         name = "theme-bobthefish";
         src = inputs.theme-bobthefish;
       }
+      {
+        name = "fish-fzf";
+        src = inputs.fish-fzf;
+      }
+      {
+        name = "fish-foreign-env";
+        src = inputs.fish-foreign-env;
+      }
     ];
 
-    interactiveShellInit = ''
-      source ${inputs.theme-bobthefish}/functions/fish_prompt.fish
-      source ${inputs.theme-bobthefish}/functions/fish_right_prompt.fish
-      source ${inputs.theme-bobthefish}/functions/fish_title.fish
-
-      set -g SHELL ${pkgs.fish}/bin/fish
-      set -g fish_greeting
-      set -g theme_color_scheme dracula
-
-      # Keep the existing SSH-agent behavior unchanged.
-      function __ssh_agent_is_started
-        if test -f $SSH_ENV; and test -z "$SSH_AGENT_PID"
-          source $SSH_ENV > /dev/null
-        end
-        if test -z "$SSH_AGENT_PID"
-          return 1
-        end
-        ssh-add -l > /dev/null 2>&1
-        if test $status -eq 2
-          return 1
-        end
-      end
-
-      function __ssh_agent_start
-        ssh-agent -c | sed 's/^echo/#echo/' > $SSH_ENV
-        chmod 600 $SSH_ENV
-        source $SSH_ENV > /dev/null
-        ssh-add ~/.ssh/id_ed25519_github > /dev/null 2>&1
-      end
-
-      if not test -d $HOME/.ssh
-        mkdir -p $HOME/.ssh
-        chmod 0700 $HOME/.ssh
-      end
-
-      if test -z "$SSH_ENV"
-        set -xg SSH_ENV $HOME/.ssh/environment
-      end
-
-      if not __ssh_agent_is_started
-        __ssh_agent_start
-      end
-
-      set -U fish_color_normal normal
-      set -U fish_color_command F8F8F2
-      set -U fish_color_quote F1FA8C
-      set -U fish_color_redirection 8BE9FD
-      set -U fish_color_end 50FA7B
-      set -U fish_color_error FF5555
-      set -U fish_color_param 5FFFFF
-      set -U fish_color_comment 6272A4
-      set -U fish_color_match --background=brblue
-      set -U fish_color_selection white --bold --background=brblack
-      set -U fish_color_search_match bryellow --background=brblack
-      set -U fish_color_history_current --bold
-      set -U fish_color_operator 00a6b2
-      set -U fish_color_escape 00a6b2
-      set -U fish_color_cwd green
-      set -U fish_color_cwd_root red
-      set -U fish_color_valid_path --underline
-      set -U fish_color_autosuggestion BD93F9
-      set -U fish_color_user brgreen
-      set -U fish_color_host normal
-    '';
+    interactiveShellInit = lib.concatStringsSep "\n" [
+      "source ${inputs.theme-bobthefish}/functions/fish_prompt.fish"
+      "source ${inputs.theme-bobthefish}/functions/fish_right_prompt.fish"
+      "source ${inputs.theme-bobthefish}/functions/fish_title.fish"
+      "set -g SHELL ${pkgs.fish}/bin/fish"
+      (builtins.readFile ./config.fish)
+    ];
   };
 
+  # Kitty stays the graphical terminal for i3 (and is available under GNOME).
   programs.kitty = lib.mkIf (!isWSL) {
     enable = true;
     font = {
@@ -166,6 +159,7 @@
     };
   };
 
+  # i3 Home Manager session — used when booting the `i3` specialisation.
   xsession.windowManager.i3 = lib.mkIf (!isWSL) {
     enable = true;
     config = {
@@ -202,8 +196,7 @@
     };
   };
 
-  # The repository tree is the live Neovim config, so editing Lua does not
-  # require a Nix rebuild. Home Manager only manages the symlink itself.
+  # Live Neovim tree: edit Lua without a Nix rebuild. Clone the repo to ~/nixos-config.
   xdg.configFile."nvim".source =
     config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/nixos-config/users/muhammad/nvim";
 }

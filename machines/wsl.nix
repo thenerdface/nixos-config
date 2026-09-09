@@ -1,4 +1,4 @@
-{ ... }:
+{ currentSystemUser, ... }:
 
 {
   imports = [
@@ -8,21 +8,20 @@
   # Platform belongs to the host configuration rather than flake wiring.
   nixpkgs.hostPlatform = "x86_64-linux";
 
-  # Запускаем NixOS внутри Windows WSL.
   wsl = {
     enable = true;
-    defaultUser = "muhammad";
+    defaultUser = currentSystemUser;
 
-    # Диски Windows будут доступны как /mnt/c, /mnt/d и так далее.
+    # Windows drives appear as /mnt/c, /mnt/d, etc.
     wslConf.automount.root = "/mnt";
 
-    # Добавляет ярлыки Linux-программ в меню Windows, когда это поддерживается.
+    # Adds Linux app shortcuts to the Windows start menu when supported.
     startMenuLaunchers = true;
   };
 
-  # NixOS-WSL сам управляет сетевыми настройками.
+  # NixOS-WSL owns resolv.conf.
   networking.resolvconf.enable = false;
 
-  # Do not bump this during normal upgrades; it preserves stateful defaults.
+  # Do not bump during normal upgrades; it preserves stateful defaults.
   system.stateVersion = "26.05";
 }

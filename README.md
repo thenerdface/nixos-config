@@ -21,9 +21,10 @@ development environment for editing, compiling, containers, and local services.
 This keeps the host integration on macOS and the development stack in a
 declarative Linux system.
 
-The VM runs in VMware Fusion on Apple Silicon. NixOS provides i3, Kitty, Neovim,
-Fish, Git, Go, compiler tooling, and Docker. Folders exposed by VMware Fusion
-are available inside the guest under `/host`.
+The VM runs in VMware Fusion on Apple Silicon. The default graphical session is
+GNOME. Boot-menu specialisations switch to i3 (X11 + Kitty) or KDE Plasma 6.
+Shared tooling includes Neovim, Fish, Git, Go, compilers, and Docker. Folders
+exposed by VMware Fusion are available inside the guest under `/host`.
 
 WSL is a second, console-focused target for Windows. It shares the user shell,
 editor, and command-line tooling with the VM, while graphical VM-only programs
@@ -47,19 +48,25 @@ standalone configuration.
 
 ```text
 .
-├── flake.nix                         # Inputs and system composition
+├── flake.nix                         # Inputs and mkSystem outputs
 ├── flake.lock                        # Pinned dependency revisions
+├── lib/mksystem.nix                  # Shared NixOS + Home Manager factory
 ├── Makefile                          # VM bootstrap, secrets, and WSL helpers
 ├── machines/
 │   ├── hardware/vm-aarch64.nix       # VM disk and filesystem layout
-│   ├── vm-aarch64.nix                # VMware/i3/Retina host configuration
+│   ├── vm-shared.nix                 # Shared VM desktop, fonts, SSH, Docker
+│   ├── vm-aarch64.nix                # VMware / network / shared-folder host
 │   └── wsl.nix                       # NixOS-WSL host configuration
 ├── modules/
-│   ├── nixos/common.nix              # Shared NixOS CLI tools and settings
-│   └── virtualisation/docker.nix     # Docker and development firewall ports
+│   ├── nixos/common.nix              # Shared NixOS CLI tools and flakes
+│   ├── virtualisation/docker.nix     # Docker and development firewall ports
+│   └── specialization/
+│       ├── i3.nix                    # Boot-menu i3 + LightDM specialisation
+│       └── plasma.nix                # Boot-menu Plasma 6 specialisation
 ├── users/muhammad/
 │   ├── nixos.nix                     # Linux user, SSH access, and sudo policy
-│   ├── home-manager.nix              # Shell, terminal, i3, fonts, and dotfiles
+│   ├── home-manager.nix              # User programs (Kitty, i3 HM, packages)
+│   ├── config.fish                   # Interactive Fish config (shell stack)
 │   └── nvim/                         # Kickstart-based Neovim configuration
 └── .github/workflows/
     ├── check.yml                     # Evaluate the flake on pushes and PRs
@@ -68,25 +75,42 @@ standalone configuration.
 
 The layers have distinct responsibilities:
 
+- `lib/mksystem.nix` wires machine + user + Home Manager the same way for every host.
 - `machines/` contains facts and settings that belong to a particular host.
+- `machines/vm-shared.nix` holds graphical VM defaults (GNOME) and imports specialisations.
 - `modules/` contains reusable NixOS behavior shared by one or more hosts.
 - `users/muhammad/nixos.nix` defines the operating-system user.
 - `users/muhammad/home-manager.nix` defines the user's home environment.
-- `flake.nix` explicitly connects those layers; it does not discover files
-  automatically.
+- Shell interactive setup lives in `config.fish`; Neovim stays a live tree under `nvim/`.
 
 ## Current stack
 
 - Nix flakes and NixOS modules for reproducible system configuration.
+- `lib/mksystem.nix` for explicit multi-host composition.
 - Home Manager for the user environment.
+- GNOME by default; i3 and Plasma 6 as NixOS specialisations (boot menu).
 - NixOS-WSL for the Windows target.
 - Make recipes with shell commands for bootstrap and recovery workflows.
 - GitHub Actions for flake evaluation and native x86_64 WSL builds.
-- Lua for the Neovim configuration.
+- Lua for the Neovim configuration only (not for system config).
 
 GitHub's language bar reflects the files in a repository, not a required NixOS
 technology stack. Languages or tools from another configuration should only be
 added when the configuration genuinely uses them.
+
+### Desktop specialisations
+
+After `nixos-rebuild switch`, the systemd-boot menu lists the base system and
+each specialisation:
+
+| Boot entry | Session |
+| --- | --- |
+| default (`vm-aarch64`) | GNOME + GDM |
+| `i3` | i3 + LightDM + Kitty |
+| `plasma` | Plasma 6 + SDDM (Wayland) |
+
+Pick `i3` when you want the previous tiling workflow. WSL has no graphical
+session and ignores these specialisations.
 
 ## Common workflow questions
 
@@ -295,13 +319,15 @@ reviewable improvements.
 
 Keep future changes proportional to a real requirement:
 
-1. Put host facts in `machines/` and reusable behavior in `modules/`, grouped by
+1. Add hosts through `lib/mksystem.nix` and a file under `machines/`.
+2. Put host facts in `machines/` and reusable behavior in `modules/`, grouped by
    concern.
-2. Keep user-level programs and dotfiles in the Home Manager module.
-3. Add a flake input only when a host or module consumes it.
-4. Prefer explicit imports while the repository is small enough to read in one
+3. Keep user-level programs and dotfiles in the Home Manager module (or a
+   sibling file it reads, like `config.fish`).
+4. Add a flake input only when a host or module consumes it.
+5. Prefer explicit imports while the repository is small enough to read in one
    pass.
-5. Format, evaluate, test, and inspect the diff before switching.
+6. Format, evaluate, test, and inspect the diff before switching.
 
 That keeps the repository useful as a learning system today and leaves a clear
 path for additional hosts, modules, or a future `nix-darwin` configuration when

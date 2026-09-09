@@ -7,6 +7,7 @@ on:
     paths:
       - "flake.nix"
       - "flake.lock"
+      - "lib/**"
       - "machines/**"
       - "modules/**"
       - "users/**"

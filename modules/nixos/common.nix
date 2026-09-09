@@ -9,9 +9,11 @@
     "nix-command"
     "flakes"
   ];
+  nix.settings.keep-outputs = true;
+  nix.settings.keep-derivations = true;
 
   # Console development tools shared by the VM and WSL.
-  # User-facing applications are managed by Home Manager instead.
+  # User-facing applications live in Home Manager.
   environment.systemPackages = with pkgs; [
     go
     git
@@ -22,6 +24,7 @@
     gettext
     ripgrep
     fd
+    fzf
     tree-sitter
     unzip
     curl
