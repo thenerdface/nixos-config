@@ -18,7 +18,7 @@
     extraGroups = [ "wheel" ];
     shell = pkgs.fish;
 
-    hashedPassword = "$6$42pkKA9Gi7LONNJr$jPxO/fnkKv4nQPJVqtIhe5IFRAnKkBUG7qwFY1O.kweF4FinfRRWZqHyJE0tzFMRLo9ro9Wq58GujeZ4BMILM1";
+    hashedPassword = "$6$bPqbcWEIPswf8UvX$lyRlTCvUcGBTUQk/aqIJu0malOsbE6opZN5.IwuL996pX0FwgvIcvD2jKO7xl5cD2a07iwI4jNENdSrMxCHQ3/";
 
     openssh.authorizedKeys.keys = [
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKZWzcVdxituxDNnlxkAsrjXZ4uVOgoyT9EhloUPHcBP muhammad@nixos-vm"
